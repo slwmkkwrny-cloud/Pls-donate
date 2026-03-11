@@ -1,0 +1,542 @@
+-- Fake Robux GUI + Fake Buy Popup Script (Animated)
+-- Place in LocalScript inside StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local MarketplaceService = game:GetService("MarketplaceService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local fakeRobux = 727
+local guiVisible = true
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FakeRobuxGUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
+-- ============================================================
+-- DRAW ROBUX ICON - לבן, קטן
+-- ============================================================
+local function drawRobuxIcon(parent, px, py, size, zindex)
+    local WHITE = Color3.fromRGB(255, 255, 255)
+    local BG    = Color3.fromRGB(18, 18, 18)
+
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0, size, 0, size)
+    container.Position = UDim2.new(0, px, 0, py)
+    container.BackgroundTransparency = 1
+    container.BorderSizePixel = 0
+    container.ZIndex = zindex
+    container.Parent = parent
+
+    local outer = Instance.new("Frame")
+    outer.Size = UDim2.new(0, size, 0, size)
+    outer.AnchorPoint = Vector2.new(0.5, 0.5)
+    outer.Position = UDim2.new(0.5, 0, 0.5, 0)
+    outer.BackgroundColor3 = WHITE
+    outer.BorderSizePixel = 0
+    outer.Rotation = 30
+    outer.ZIndex = zindex
+    outer.Parent = container
+    Instance.new("UICorner", outer).CornerRadius = UDim.new(0, math.floor(size * 0.22))
+
+    local rp = math.floor(size * 0.12)
+    local rSize = size - rp * 2
+    local ringFrame = Instance.new("Frame")
+    ringFrame.Size = UDim2.new(0, rSize, 0, rSize)
+    ringFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    ringFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    ringFrame.BackgroundColor3 = BG
+    ringFrame.BorderSizePixel = 0
+    ringFrame.Rotation = 30
+    ringFrame.ZIndex = zindex + 1
+    ringFrame.Parent = container
+    Instance.new("UICorner", ringFrame).CornerRadius = UDim.new(0, math.floor(rSize * 0.22))
+
+    local ip = math.floor(size * 0.09)
+    local iSize = rSize - ip * 2
+    local inner = Instance.new("Frame")
+    inner.Size = UDim2.new(0, iSize, 0, iSize)
+    inner.AnchorPoint = Vector2.new(0.5, 0.5)
+    inner.Position = UDim2.new(0.5, 0, 0.5, 0)
+    inner.BackgroundColor3 = WHITE
+    inner.BorderSizePixel = 0
+    inner.Rotation = 30
+    inner.ZIndex = zindex + 2
+    inner.Parent = container
+    Instance.new("UICorner", inner).CornerRadius = UDim.new(0, math.floor(iSize * 0.22))
+
+    local hSize = math.floor(iSize * 0.44)
+    local sq = Instance.new("Frame")
+    sq.Size = UDim2.new(0, hSize, 0, hSize)
+    sq.AnchorPoint = Vector2.new(0.5, 0.5)
+    sq.Position = UDim2.new(0.5, 0, 0.5, 0)
+    sq.BackgroundColor3 = BG
+    sq.BorderSizePixel = 0
+    sq.ZIndex = zindex + 3
+    sq.Parent = container
+    Instance.new("UICorner", sq).CornerRadius = UDim.new(0, math.floor(hSize * 0.15))
+
+    return container
+end
+
+-- ============================================================
+-- TOAST NOTIFICATION (כפתור ורוד קטן למטה)
+-- ============================================================
+local function showToast(passName)
+    local toast = Instance.new("Frame")
+    toast.Size = UDim2.new(0, 200, 0, 42)
+    toast.Position = UDim2.new(0.5, -100, 1, 60)
+    toast.BackgroundColor3 = Color3.fromRGB(225, 45, 115)
+    toast.BorderSizePixel = 0
+    toast.ZIndex = 30
+    toast.Parent = screenGui
+    Instance.new("UICorner", toast).CornerRadius = UDim.new(0, 21)
+
+    local shadow = Instance.new("UIStroke", toast)
+    shadow.Color = Color3.fromRGB(160, 20, 80)
+    shadow.Thickness = 3
+
+    local giftIcon = Instance.new("TextLabel")
+    giftIcon.Size = UDim2.new(0, 30, 1, 0)
+    giftIcon.Position = UDim2.new(0, 12, 0, 0)
+    giftIcon.BackgroundTransparency = 1
+    giftIcon.Text = "🎁"
+    giftIcon.TextSize = 18
+    giftIcon.Font = Enum.Font.GothamBold
+    giftIcon.ZIndex = 31
+    giftIcon.Parent = toast
+
+    local toastText = Instance.new("TextLabel")
+    toastText.Size = UDim2.new(1, -52, 1, 0)
+    toastText.Position = UDim2.new(0, 46, 0, 0)
+    toastText.BackgroundTransparency = 1
+    toastText.Text = "sent gift!"
+    toastText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toastText.TextSize = 15
+    toastText.Font = Enum.Font.GothamBold
+    toastText.TextXAlignment = Enum.TextXAlignment.Left
+    toastText.ZIndex = 31
+    toastText.Parent = toast
+
+    -- הגעה מלמטה
+    local tweenIn = TweenService:Create(toast,
+        TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        { Position = UDim2.new(0.5, -100, 1, -65) }
+    )
+    tweenIn:Play()
+
+    -- יציאה אחרי 2.5 שניות
+    task.delay(2.5, function()
+        local tweenOut = TweenService:Create(toast,
+            TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+            { Position = UDim2.new(0.5, -100, 1, 60) }
+        )
+        tweenOut:Play()
+        tweenOut.Completed:Connect(function()
+            toast:Destroy()
+        end)
+    end)
+end
+
+-- ============================================================
+-- TOGGLE BUTTON
+-- ============================================================
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0, 36, 0, 36)
+toggleBtn.Position = UDim2.new(0, 20, 0, 20)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 255)
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Text = "▼"
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.TextSize = 16
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.ZIndex = 5
+toggleBtn.Parent = screenGui
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 8)
+
+-- ============================================================
+-- SETTINGS PANEL (Draggable)
+-- ============================================================
+local settingsFrame = Instance.new("Frame")
+settingsFrame.Name = "SettingsPanel"
+settingsFrame.Size = UDim2.new(0, 280, 0, 160)
+settingsFrame.Position = UDim2.new(0, 20, 0, 62)
+settingsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+settingsFrame.BorderSizePixel = 0
+settingsFrame.Active = true
+settingsFrame.Parent = screenGui
+Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 10)
+
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, 0, 0, 35)
+titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+titleBar.BorderSizePixel = 0
+titleBar.Text = "⚙️ Fake Robux Settings"
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.TextSize = 14
+titleBar.Font = Enum.Font.GothamBold
+titleBar.Parent = settingsFrame
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 10)
+
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, -20, 0, 25)
+label.Position = UDim2.new(0, 10, 0, 45)
+label.BackgroundTransparency = 1
+label.Text = "Enter your fake Robux amount:"
+label.TextColor3 = Color3.fromRGB(200, 200, 200)
+label.TextSize = 13
+label.Font = Enum.Font.Gotham
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.Parent = settingsFrame
+
+local robuxInput = Instance.new("TextBox")
+robuxInput.Size = UDim2.new(1, -20, 0, 35)
+robuxInput.Position = UDim2.new(0, 10, 0, 75)
+robuxInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+robuxInput.BorderSizePixel = 0
+robuxInput.Text = tostring(fakeRobux)
+robuxInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+robuxInput.TextSize = 16
+robuxInput.Font = Enum.Font.GothamBold
+robuxInput.PlaceholderText = "e.g. 1000"
+robuxInput.Parent = settingsFrame
+Instance.new("UICorner", robuxInput).CornerRadius = UDim.new(0, 8)
+
+local applyBtn = Instance.new("TextButton")
+applyBtn.Size = UDim2.new(1, -20, 0, 35)
+applyBtn.Position = UDim2.new(0, 10, 0, 118)
+applyBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 255)
+applyBtn.BorderSizePixel = 0
+applyBtn.Text = "✅ Apply"
+applyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+applyBtn.TextSize = 15
+applyBtn.Font = Enum.Font.GothamBold
+applyBtn.Parent = settingsFrame
+Instance.new("UICorner", applyBtn).CornerRadius = UDim.new(0, 8)
+
+toggleBtn.MouseButton1Click:Connect(function()
+    guiVisible = not guiVisible
+    settingsFrame.Visible = guiVisible
+    toggleBtn.Text = guiVisible and "▼" or "▶"
+end)
+
+local dragging, dragStart, startPos = false, nil, nil
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = settingsFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        settingsFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+applyBtn.MouseButton1Click:Connect(function()
+    local val = tonumber(robuxInput.Text)
+    if val then fakeRobux = math.floor(val) else robuxInput.Text = tostring(fakeRobux) end
+end)
+
+-- ============================================================
+-- ANIMATE IN
+-- ============================================================
+local function animateIn(frame)
+    local w = frame.AbsoluteSize.X
+    local h = frame.AbsoluteSize.Y
+    frame.Position = UDim2.new(0.5, -w/2, 1, 60)
+    TweenService:Create(frame,
+        TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        { Position = UDim2.new(0.5, -w/2, 0.5, -h/2) }
+    ):Play()
+end
+
+-- ============================================================
+-- ANIMATE OUT
+-- ============================================================
+local function animateOut(frame, overlay, callback)
+    local w = frame.AbsoluteSize.X
+    local t = TweenService:Create(frame,
+        TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+        { Position = UDim2.new(0.5, -w/2, 1, 80) }
+    )
+    t:Play()
+    t.Completed:Connect(function()
+        if overlay then overlay:Destroy() end
+        frame:Destroy()
+        if callback then callback() end
+    end)
+end
+
+-- ============================================================
+-- PURCHASE COMPLETED POPUP
+-- ============================================================
+local function showPurchaseComplete(passName)
+    local overlay2 = Instance.new("Frame")
+    overlay2.Size = UDim2.new(1, 0, 1, 0)
+    overlay2.BackgroundTransparency = 1
+    overlay2.BorderSizePixel = 0
+    overlay2.ZIndex = 20
+    overlay2.Parent = screenGui
+
+    local popup2 = Instance.new("Frame")
+    popup2.Size = UDim2.new(0, 370, 0, 230)
+    popup2.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    popup2.BorderSizePixel = 0
+    popup2.ZIndex = 21
+    popup2.Parent = screenGui
+    Instance.new("UICorner", popup2).CornerRadius = UDim.new(0, 14)
+
+    local title2 = Instance.new("TextLabel")
+    title2.Size = UDim2.new(1, -50, 0, 40)
+    title2.Position = UDim2.new(0, 15, 0, 8)
+    title2.BackgroundTransparency = 1
+    title2.Text = "Purchased completed"
+    title2.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title2.TextSize = 20
+    title2.Font = Enum.Font.GothamBold
+    title2.TextXAlignment = Enum.TextXAlignment.Left
+    title2.ZIndex = 22
+    title2.Parent = popup2
+
+    local closeBtn2 = Instance.new("TextButton")
+    closeBtn2.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn2.Position = UDim2.new(1, -40, 0, 10)
+    closeBtn2.BackgroundTransparency = 1
+    closeBtn2.Text = "✕"
+    closeBtn2.TextColor3 = Color3.fromRGB(200, 200, 200)
+    closeBtn2.TextSize = 18
+    closeBtn2.Font = Enum.Font.GothamBold
+    closeBtn2.ZIndex = 22
+    closeBtn2.Parent = popup2
+
+    local checkCircle = Instance.new("Frame")
+    checkCircle.Size = UDim2.new(0, 80, 0, 80)
+    checkCircle.Position = UDim2.new(0.5, -40, 0, 48)
+    checkCircle.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    checkCircle.BorderSizePixel = 0
+    checkCircle.ZIndex = 22
+    checkCircle.Parent = popup2
+    Instance.new("UICorner", checkCircle).CornerRadius = UDim.new(1, 0)
+    local ringStroke = Instance.new("UIStroke")
+    ringStroke.Thickness = 5
+    ringStroke.Color = Color3.fromRGB(255, 255, 255)
+    ringStroke.Parent = checkCircle
+
+    local checkLabel = Instance.new("TextLabel")
+    checkLabel.Size = UDim2.new(1, 0, 1, 0)
+    checkLabel.BackgroundTransparency = 1
+    checkLabel.Text = "✓"
+    checkLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    checkLabel.TextSize = 44
+    checkLabel.Font = Enum.Font.GothamBold
+    checkLabel.ZIndex = 23
+    checkLabel.Parent = checkCircle
+
+    local successText = Instance.new("TextLabel")
+    successText.Size = UDim2.new(1, -20, 0, 30)
+    successText.Position = UDim2.new(0, 10, 0, 138)
+    successText.BackgroundTransparency = 1
+    successText.Text = "You have successfully bought " .. passName
+    successText.TextColor3 = Color3.fromRGB(210, 210, 210)
+    successText.TextSize = 14
+    successText.Font = Enum.Font.Gotham
+    successText.ZIndex = 22
+    successText.Parent = popup2
+
+    local okayBtn = Instance.new("TextButton")
+    okayBtn.Size = UDim2.new(1, -30, 0, 46)
+    okayBtn.Position = UDim2.new(0, 15, 1, -58)
+    okayBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 255)
+    okayBtn.BorderSizePixel = 0
+    okayBtn.Text = "Okay"
+    okayBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    okayBtn.TextSize = 20
+    okayBtn.Font = Enum.Font.GothamBold
+    okayBtn.ZIndex = 22
+    okayBtn.Parent = popup2
+    Instance.new("UICorner", okayBtn).CornerRadius = UDim.new(0, 12)
+
+    task.defer(function() animateIn(popup2) end)
+
+    local function close2()
+        animateOut(popup2, overlay2, function()
+            showToast(passName)
+        end)
+    end
+    closeBtn2.MouseButton1Click:Connect(close2)
+    okayBtn.MouseButton1Click:Connect(close2)
+end
+
+-- ============================================================
+-- FAKE BUY POPUP
+-- ============================================================
+local function showFakePopup(passName, passPrice, passImageId)
+    local robuxAfter = fakeRobux - passPrice
+
+    local overlay = Instance.new("Frame")
+    overlay.Size = UDim2.new(1, 0, 1, 0)
+    overlay.BackgroundTransparency = 1
+    overlay.BorderSizePixel = 0
+    overlay.ZIndex = 10
+    overlay.Parent = screenGui
+
+    local popup = Instance.new("Frame")
+    popup.Size = UDim2.new(0, 380, 0, 220)
+    popup.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+    popup.BorderSizePixel = 0
+    popup.ZIndex = 11
+    popup.Parent = screenGui
+    Instance.new("UICorner", popup).CornerRadius = UDim.new(0, 14)
+
+    local buyTitle = Instance.new("TextLabel")
+    buyTitle.Size = UDim2.new(0, 140, 0, 40)
+    buyTitle.Position = UDim2.new(0, 18, 0, 8)
+    buyTitle.BackgroundTransparency = 1
+    buyTitle.Text = "Buy item"
+    buyTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+    buyTitle.TextSize = 22
+    buyTitle.Font = Enum.Font.GothamBold
+    buyTitle.TextXAlignment = Enum.TextXAlignment.Left
+    buyTitle.ZIndex = 12
+    buyTitle.Parent = popup
+
+    -- Robux icon + balance top right (קטן יותר - 16px)
+    local topIconSize = 16
+    local topIconX = 380 - 148
+    local topIconY = 16
+    drawRobuxIcon(popup, topIconX, topIconY, topIconSize, 12)
+
+    local topText = Instance.new("TextLabel")
+    topText.Size = UDim2.new(0, 75, 0, 28)
+    topText.Position = UDim2.new(0, topIconX + topIconSize + 4, 0, topIconY - 3)
+    topText.BackgroundTransparency = 1
+    topText.Text = tostring(fakeRobux)
+    topText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    topText.TextSize = 16
+    topText.Font = Enum.Font.GothamBold
+    topText.TextXAlignment = Enum.TextXAlignment.Left
+    topText.ZIndex = 12
+    topText.Parent = popup
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 30, 0, 30)
+    closeBtn.Position = UDim2.new(1, -38, 0, 12)
+    closeBtn.BackgroundTransparency = 1
+    closeBtn.Text = "✕"
+    closeBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    closeBtn.TextSize = 18
+    closeBtn.Font = Enum.Font.GothamBold
+    closeBtn.ZIndex = 12
+    closeBtn.Parent = popup
+
+    local imgFrame = Instance.new("Frame")
+    imgFrame.Size = UDim2.new(0, 70, 0, 70)
+    imgFrame.Position = UDim2.new(0, 18, 0, 58)
+    imgFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    imgFrame.BorderSizePixel = 0
+    imgFrame.ZIndex = 12
+    imgFrame.Parent = popup
+    Instance.new("UICorner", imgFrame).CornerRadius = UDim.new(1, 0)
+
+    local itemImage = Instance.new("ImageLabel")
+    itemImage.Size = UDim2.new(1, 0, 1, 0)
+    itemImage.BackgroundTransparency = 1
+    itemImage.Image = (passImageId ~= "" and passImageId or "rbxasset://textures/ui/GuiImagePlaceholder.png")
+    itemImage.ZIndex = 13
+    itemImage.Parent = imgFrame
+    Instance.new("UICorner", itemImage).CornerRadius = UDim.new(1, 0)
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Size = UDim2.new(1, -110, 0, 28)
+    nameLabel.Position = UDim2.new(0, 100, 0, 62)
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.Text = passName
+    nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nameLabel.TextSize = 17
+    nameLabel.Font = Enum.Font.GothamBold
+    nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+    nameLabel.ZIndex = 12
+    nameLabel.Parent = popup
+
+    -- Price: robux icon קטן + number
+    local priceIconSize = 16
+    drawRobuxIcon(popup, 100, 97, priceIconSize, 12)
+
+    local priceText = Instance.new("TextLabel")
+    priceText.Size = UDim2.new(0, 80, 0, 26)
+    priceText.Position = UDim2.new(0, 100 + priceIconSize + 4, 0, 94)
+    priceText.BackgroundTransparency = 1
+    priceText.Text = tostring(passPrice)
+    priceText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    priceText.TextSize = 15
+    priceText.Font = Enum.Font.GothamBold
+    priceText.TextXAlignment = Enum.TextXAlignment.Left
+    priceText.ZIndex = 12
+    priceText.Parent = popup
+
+    local buyBtn = Instance.new("TextButton")
+    buyBtn.Size = UDim2.new(1, -30, 0, 50)
+    buyBtn.Position = UDim2.new(0, 15, 1, -62)
+    buyBtn.BackgroundColor3 = Color3.fromRGB(70, 100, 255)
+    buyBtn.BorderSizePixel = 0
+    buyBtn.Text = "Buy"
+    buyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    buyBtn.TextSize = 20
+    buyBtn.Font = Enum.Font.GothamBold
+    buyBtn.ZIndex = 12
+    buyBtn.Parent = popup
+    Instance.new("UICorner", buyBtn).CornerRadius = UDim.new(0, 12)
+
+    task.defer(function() animateIn(popup) end)
+
+    local function closePopup(callback)
+        animateOut(popup, overlay, callback)
+    end
+
+    closeBtn.MouseButton1Click:Connect(function()
+        closePopup(nil)
+    end)
+
+    buyBtn.MouseButton1Click:Connect(function()
+        fakeRobux = robuxAfter
+        closePopup(function()
+            task.wait(0.1)
+            showPurchaseComplete(passName)
+        end)
+    end)
+end
+
+-- ============================================================
+-- INTERCEPT PROMPTS
+-- ============================================================
+MarketplaceService.PromptGamePassPurchaseRequested:Connect(function(plr, gamePassId)
+    local success, info = pcall(function()
+        return MarketplaceService:GetProductInfo(gamePassId, Enum.InfoType.GamePass)
+    end)
+    local passName  = success and info and info.Name or "Game Pass"
+    local passPrice = success and info and info.PriceInRobux or 0
+    local passImage = success and info and ("rbxassetid://" .. (info.IconImageAssetId or 0)) or ""
+    showFakePopup(passName, passPrice, passImage)
+end)
+
+MarketplaceService.PromptProductPurchaseRequested:Connect(function(plr, productId)
+    local success, info = pcall(function()
+        return MarketplaceService:GetProductInfo(productId, Enum.InfoType.Product)
+    end)
+    local passName  = success and info and info.Name or "Product"
+    local passPrice = success and info and info.PriceInRobux or 0
+    local passImage = success and info and ("rbxassetid://" .. (info.IconImageAssetId or 0)) or ""
+    showFakePopup(passName, passPrice, passImage)
+end)
+
+print("[FakeRobux] Script loaded!")
